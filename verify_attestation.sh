@@ -70,9 +70,8 @@ if [[ "${SECRET}" == "" || "${LAUNCH_MEASUREMENT}" == "" ]]; then
 fi
 
 # Calculate digest of OVMF.fd
-echo ${OVMF}
 ovmf_hash=$(sha256sum "${OVMF}" | awk '{print $1}')
-echo "OVMF hash: $ovmf_hash"
+echo "hash of $OVMF: $ovmf_hash"
 
 # Dervie TIK from tiktek file
 TIK=$(xxd -p "${TIKTEK}"  | tr -d '\n'  | tail -c 32)
@@ -87,14 +86,36 @@ echo "SEV info: api_minor: ${API_MINOR}, api_major: ${API_MAJOR}, build_id: ${BU
 
 # Derive mnonce and expected measurement from the launch_measurement
 echo "${LAUNCH_MEASUREMENT}" | base64 -d | split -b 32
-expected_measurement=$(cat xaa)
-mnonce=$(cat xab)
+launch_measurement=$(xxd -p xaa | tr -d '\n')
+mnonce=$(xxd -p xab | tr -d '\n')
 
 # Run calc_measurement from sevtool
-sudo ./sevtool --ofolder ./certs --calc_measurement 04 ${API_MAJOR} ${API_MINOR} ${BUILD_ID} ${POLICY} $ovmf_hash $mnonce $TIK
+echo "Calculate expected measurement via sevtool"
+echo "sudo ./sevtool --ofolder ./certs --calc_measurement 04 ${API_MAJOR} ${API_MINOR} ${BUILD_ID} ${POLICY} ${ovmf_hash} ${mnonce} ${TIK}"
+sudo ./sevtool --ofolder ./certs --calc_measurement 04 $API_MAJOR $API_MINOR $BUILD_ID $POLICY $ovmf_hash $mnonce $TIK
+if [ ! -f ./certs/calc_measurement_out.txt ]; then
+  echo "Measurement could not be calculated"
+  exit 1
+fi
+
+expected_measurement=$(< ./certs/calc_measurement_out.txt)
+echo "Expected measurement: $expected_measurement"
+echo "Launch measurement: $launch_measurement"
+if [[ $expected_measurement != $launch_measurement ]]; then
+  echo "Measurement does not match. Attestation failed!"
+  exit 1
+fi
 
 # Create packaged secret and its header
 echo "${SECRET}" > ./certs/secret.txt
 sudo ./sevtool --ofolder ./certs --package_secret
 
-echo "Secret created in certs folder"
+if [ ! -f ./certs/packaged_secret.bin ]; then
+  echo "Secret could not be created"
+  exit 1
+fi
+
+secret_base64=$(base64 ./certs/packaged_secret.bin)
+secret_header_base64=$(base64 ./certs/packaged_secret_header.bin)
+echo "Secret packaged successfully. Send the following message to the guest VM via qmp"
+echo "{ \"execute\": \"sev-inject-launch-secret\", \"arguments\": { \"packet-header\": \"${secret_header_base64}\", \"secret\": \"${secret_base64}\"}}"
