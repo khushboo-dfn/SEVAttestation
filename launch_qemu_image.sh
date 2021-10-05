@@ -49,5 +49,16 @@ fi
 
 echo "***** Platform owner *****"
 echo "Launch the image"
-sudo qemu-system-x86_64 -name sevtest -enable-kvm -cpu EPYC -machine q35 -smp 4,maxcpus=64 -m 4096M,slots=5,maxmem=30G -drive if=pflash,format=raw,unit=0,file=OVMF.fd,readonly -drive file=ubuntu-18.04.4-desktop-amd64.iso,media=cdrom -boot d -netdev user,id=vmnic -device e1000,netdev=vmnic,romfile= -drive file=ubuntu-18.04.qcow2,if=none,id=disk0,format=qcow2 -device virtio-scsi-pci,id=scsi,disable-legacy=on,iommu_platform=true -device scsi-hd,drive=disk0 -object sev-guest,id=sev0,cbitpos=47,reduced-phys-bits=1,policy=0x1,session-file=launch_blob.base64,dh-cert-file=godh.base64 -machine memory-encryption=sev0 -nographic -monitor telnet:127.0.0.1:5551,server,nowait -S -qmp tcp:127.0.0.1:5550,server,nowait
+sudo qemu-system-x86_64 \
+	-name sevtest -enable-kvm \
+	-cpu EPYC -machine q35 -smp 4,maxcpus=64 \
+	-m 4096M,slots=5,maxmem=30G \
+	-drive if=pflash,format=raw,unit=0,file=OVMF.fd,readonly \
+	-drive file=ubuntu-18.04.4-desktop-amd64.iso,media=cdrom \
+	-boot d -netdev user,id=vmnic -device e1000,netdev=vmnic,romfile= \
+	-drive file=ubuntu-18.04.qcow2,if=none,id=disk0,format=qcow2 \
+	-device virtio-scsi-pci,id=scsi,disable-legacy=on,iommu_platform=true \
+	-device scsi-hd,drive=disk0 \
+	-object sev-guest,id=sev0,cbitpos=47,reduced-phys-bits=1,policy=0x1,session-file=launch_blob.base64,dh-cert-file=godh.base64 \
+	-machine memory-encryption=sev0 -nographic -monitor telnet:127.0.0.1:5551,server,nowait -S -qmp tcp:127.0.0.1:5550,server,nowait
 
