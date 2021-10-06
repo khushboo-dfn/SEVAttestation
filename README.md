@@ -3,7 +3,7 @@
 This project contains all the tools and scripts required to perform SEV attestation and injection of a secret.
 
 ## Dependencies
-1. QEMU version 6.1 (released on August 24, 2021) - None of the previous versions support attestation and secret injection capabilites
+1. QEMU version 6.1 https://www.qemu.org/download/#source (released on August 24, 2021) - None of the previous versions support attestation and secret injection capabilites
 
 
 ## How to run
