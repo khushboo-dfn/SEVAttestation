@@ -11,7 +11,7 @@ Usage:
   -p secret: secret to be injected (minimum of 8 bytes)
   -m launch_measurement: launch measurement from QMP (result of query-sev-launch-measure)
   -t tiktek_file: file where sev-tool stored the TIK/TEK combination, defaults to tmp_tk.bin
-  -o ovmf_file: location of OVMF file to calculate hash from, default is OVMF.fd
+  -o ovmf_file: location of OVMF file to calculate hash from, default is OVMF_CODE.fd
   -s sevtool: location of sevtool, default is current directory
   -a api_minor: api-minor SEV info from QMP (result of query-sev), default 22
   -b api_major: api-major SEV info from QMP (result of query-sev), default 0
@@ -21,14 +21,14 @@ EOF
 }
 
 # default values
-OVMF=OVMF.fd
+OVMF=OVMF_CODE.fd
 TIKTEK="certs/tmp_tk.bin"
 SEVTOOL=sevtool
 API_MINOR=22
 API_MAJOR=0
 BUILD_ID=13
 POLICY=1
-while getopts "p:m:i:t:o:s:" OPT; do
+while getopts "p:m:i:t:o:s:a:b:c:d:" OPT; do
     case "${OPT}" in
         p)
             SECRET="${OPTARG}"

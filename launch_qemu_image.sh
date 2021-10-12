@@ -1,12 +1,41 @@
 #!/bin/bash
 set -e
-echo "***** Platform Owner *****"
-# Generate your OCA
-echo "Generate your OCA"
-openssl ecparam -genkey -name secp384r1 -noout -out ec384-key-pair.pem
-openssl ec -in ec384-key-pair.pem -pubout -out ec384pub.pem
+
+function usage() {
+    cat <<EOF
+Usage:
+  launch_qemu_image -c location_of_iso -i location_of_raw_image
+  Launch a QEMU image 
+  -c location_of_iso: default ubuntu-server.iso
+  -i location_of_raw_image: default ubuntu-server.img
+EOF
+}
+
+# default values
+ISO="ubuntu-server.iso"
+IMAGE="ubuntu-server.img"
+while getopts "c:i:" OPT; do
+    case "${OPT}" in
+        c)
+            ISO="${OPTARG}"
+            ;;
+        i)
+            IMAGE="${OPTARG}"
+            ;;
+        *)
+            usage
+            exit 1
+            ;;
+    esac
+done
 
 if [ ! -d certs ]; then
+	echo "***** Platform Owner *****"
+	# Generate your OCA
+	echo "Generate your OCA"
+	openssl ecparam -genkey -name secp384r1 -noout -out ec384-key-pair.pem
+	openssl ec -in ec384-key-pair.pem -pubout -out ec384pub.pem
+
 	# Make folder for certs
 	echo "Make certs folder"
 	mkdir -p certs
@@ -53,12 +82,12 @@ sudo qemu-system-x86_64 \
 	-name sevtest -enable-kvm \
 	-cpu EPYC -machine q35 -smp 4,maxcpus=64 \
 	-m 4096M,slots=5,maxmem=30G \
-	-drive if=pflash,format=raw,unit=0,file=OVMF.fd,readonly \
-	-drive file=ubuntu-18.04.4-desktop-amd64.iso,media=cdrom \
-	-boot d -netdev user,id=vmnic -device e1000,netdev=vmnic,romfile= \
-	-drive file=ubuntu-18.04.qcow2,if=none,id=disk0,format=qcow2 \
+	-drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \
+	-drive if=pflash,format=raw,readonly=on,file=OVMF_VARS.fd \
+	-drive file=${ISO},media=cdrom \
+	-boot d -netdev user,id=vmnic,hostfwd=tcp::2222-:22 -device e1000,netdev=vmnic,romfile= \
+	-drive file=${IMAGE},if=none,id=disk0,format=qcow2 \
 	-device virtio-scsi-pci,id=scsi,disable-legacy=on,iommu_platform=true \
-	-device scsi-hd,drive=disk0 \
+	-device scsi-hd,drive=disk0 -nographic -vnc :1 \
 	-object sev-guest,id=sev0,cbitpos=47,reduced-phys-bits=1,policy=0x1,session-file=launch_blob.base64,dh-cert-file=godh.base64 \
 	-machine memory-encryption=sev0 -nographic -monitor telnet:127.0.0.1:5551,server,nowait -S -qmp tcp:127.0.0.1:5550,server,nowait
-
