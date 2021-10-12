@@ -9,9 +9,25 @@ This project contains all the tools and scripts required to perform SEV attestat
 1. `git clone git@github.com:khushboo-dfn/SEVAttestation.git`
 2. `cd SEVAttestation`
 3. Prepare image
-    - Get an Ubuntu server image
+    - Get an Ubuntu server image  
         `wget https://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64.img` (Rename it to ubuntu-server.img)
-    - Prepare iso
+    - Prepare iso  
+        - create a metadata file with the desired instance ID and hostname:  
+        ```
+         $ cat > metadata.yaml <<EOF  
+         instance-id: iid-local01  
+         local-hostname: cloudimg  
+         EOF
+         ```
+        - Next, create a user data file to provide the SSH key to the instance. The example below uses cloud-init’s cloud-config to pass this information to automatically add the key to the default user.  
+        ```
+         $ cat > user-data.yaml <<EOF  
+         #cloud-config  
+         ssh_authorized_keys:  
+            - ssh-rsa AAAAB3NzaC1yc2EAAAABIwJJJQEA3I7VUf3l5gSn5uavROsc5HRDpZ ...  
+         EOF
+         ```
+         - Finally, generate the seed image that combines the metadata and user data files:  
         `sudo cloud-localds ubuntu-server.iso user-data.yaml metadata.yaml`
 4. Launch a QEMU image using `launch_qemu_image` script  
     `./launch_qemu_image.sh`
@@ -35,4 +51,6 @@ This project contains all the tools and scripts required to perform SEV attestat
        "arguments": { "packet-header": "AAAAAI0M2R8bw40sg0Hu8PsGRf2LGHcBJcECXCFgkTgnHU4VCLMWx8tz8iAEuW4IKQl/BA==", "secret": "usNTvLEGVvtB2rMHCw=="}}`  
     `{"return": {}}`  
 9. Continue to launch the guest VM  
-    `{ "execute": "cont"}`
+    `{ "execute": "cont"}`  
+10. Login with SSH  
+    `ssh -o "StrictHostKeyChecking no" -p 2222 ubuntu@0.0.0.0`
