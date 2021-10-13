@@ -28,7 +28,8 @@ This project contains all the tools and scripts required to perform SEV attestat
          EOF
          ```
          - Finally, generate the seed image that combines the metadata and user data files:  
-        `sudo cloud-localds ubuntu-server.iso user-data.yaml metadata.yaml`
+        `sudo cloud-localds ubuntu-server.iso user-data.yaml metadata.yaml`  
+        Note: In order to test an end-to-end solution for encrypted disk image, following this article: https://opencraft.com/blog/tutorial-encrypting-an-existing-root-partition-in-ubuntu-with-dm-crypt-and-luks/ to encrypt the image. The secret injected will be able to decrypt the image. To test with an already encrypted image, please contact the author.
 4. Launch a QEMU image using `launch_qemu_image` script  
     `./launch_qemu_image.sh`
 5. In another terminal, connect to the QEMU instance using QMP  
