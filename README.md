@@ -55,3 +55,7 @@ This project contains all the tools and scripts required to perform SEV attestat
     `{ "execute": "cont"}`  
 10. Login with SSH  
     `ssh -o "StrictHostKeyChecking no" -p 2222 ubuntu@0.0.0.0`
+
+## Supporting blogs/articles
+1. How to mount a cqow image: https://docs.j7k6.org/mount-qcow2-disk-image-linux/
+2. Confidential Computing with AMD SEV: https://blog.hansenpartnership.com/building-encrypted-images-for-confidential-computing/#easy-footnote-bottom-2-1196
