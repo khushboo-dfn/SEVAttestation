@@ -1,0 +1,81 @@
+From c99a191f57d76b2a7aeaa9ba7660c11601fd3dc3 Mon Sep 17 00:00:00 2001
+From: Eero Kelly <eero.kelly@dfinity.org>
+Date: Tue, 19 Oct 2021 01:03:37 +0000
+Subject: [PATCH] Patch OVMF to include patched grub
+
+---
+ OvmfPkg/AmdSev/Grub/grub.cfg | 10 ++--------
+ OvmfPkg/AmdSev/Grub/grub.sh  | 19 ++++++++++---------
+ 2 files changed, 12 insertions(+), 17 deletions(-)
+
+diff --git a/OvmfPkg/AmdSev/Grub/grub.cfg b/OvmfPkg/AmdSev/Grub/grub.cfg
+index 17be94277a..331baf798c 100644
+--- a/OvmfPkg/AmdSev/Grub/grub.cfg
++++ b/OvmfPkg/AmdSev/Grub/grub.cfg
+@@ -10,16 +10,10 @@
+ ##
+ 
+ echo "Entering grub config"
+-sevsecret
++cryptomount -s efisecret
+ if [ $? -ne 0 ]; then
+-    echo "Failed to locate anything in the SEV secret area, prompting for password"
++    echo "Failed to mount root securely, retrying with password prompt"
+     cryptomount -a
+-else
+-    cryptomount -s
+-    if [ $? -ne 0 ]; then
+-        echo "Failed to mount root securely, retrying with password prompt"
+-        cryptomount -a
+-    fi
+ fi
+ set root=
+ for f in (crypto*); do
+diff --git a/OvmfPkg/AmdSev/Grub/grub.sh b/OvmfPkg/AmdSev/Grub/grub.sh
+index 99807d7291..4483ab606a 100644
+--- a/OvmfPkg/AmdSev/Grub/grub.sh
++++ b/OvmfPkg/AmdSev/Grub/grub.sh
+@@ -42,9 +42,8 @@ GRUB_MODULES="
+             test
+             regexp
+             linux
+-            linuxefi
+             reboot
+-            sevsecret
++            efisecret
+             "
+ basedir=$(dirname -- "$0")
+ 
+@@ -61,13 +60,14 @@ fi
+ # different distributions have different names for grub-mkimage, so
+ # search all the known ones
+ ##
+-mkimage=
+-for b in grub2-mkimage grub-mkimage; do
+-    if which "$b" > /dev/null 2>&1; then
+-        mkimage="$b"
+-        break
+-    fi
+-done
++# mkimage=
++# for b in grub2-mkimage grub-mkimage; do
++#     if which "$b" > /dev/null 2>&1; then
++#         mkimage="$b"
++#         break
++#     fi
++# done
++mkimage="${basedir}/grub/grub-mkimage"
+ if [ -z "$mkimage" ]; then
+     echo "Can't find grub mkimage" >&2
+     exit 1
+@@ -83,6 +83,7 @@ mcopy -i "${basedir}/disk.fat" -- "${basedir}/grub.cfg" ::grub.cfg
+ 
+ 
+ ${mkimage} -O x86_64-efi \
++           -d "${basedir}/grub/grub-core" \
+            -p '(crypto0)' \
+            -c "${basedir}/grub-bootstrap.cfg" \
+            -m "${basedir}/disk.fat" \
+-- 
+2.25.1
+

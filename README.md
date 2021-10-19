@@ -6,6 +6,7 @@ This project contains all the tools and scripts required to perform SEV attestat
 1. QEMU version 6.1 https://www.qemu.org/download/#source (released on August 24, 2021) - None of the previous versions support attestation and secret injection capabilites
 
 ## How to run
+0. Apply patches and build grub, then include this grub in the patched OVMF build.
 1. `git clone git@github.com:khushboo-dfn/SEVAttestation.git`
 2. `cd SEVAttestation`
 3. Prepare image
@@ -44,8 +45,9 @@ This project contains all the tools and scripts required to perform SEV attestat
     `{ "execute": "query-sev-launch-measure" }`  
     `{"return": {"data": "7vHlsVKpvBaUHU5jzpNtfLMFAljbBnVrkqO51p3Ny3sZHribEtvolLvSRs0SqW8a"}}`  
     Record these results to pass to the script in next step.  
-7. In a third terminal, run the script to verify attestation  
-    `./verify_attestation.sh -p secret_to_be_injected -m 7vHlsVKpvBaUHU5jzpNtfLMFAljbBnVrkqO51p3Ny3sZHribEtvolLvSRs0SqW8a`  
+7. In a third terminal, prepare a secret using `secret.py --passwd <Encryption key>`.
+7. Run the script to verify attestation  
+    `./verify_attestation.sh -p secret_file_to_be_injected -m 7vHlsVKpvBaUHU5jzpNtfLMFAljbBnVrkqO51p3Ny3sZHribEtvolLvSRs0SqW8a`  
     This script assumes sev info parameters, location of qemu and OVMF.fd as default but they can be specified. Run `./verify_attestation.sh -h` to find arguments.
 8. Inject secret via qmp  
     `{ "execute": "sev-inject-launch-secret",

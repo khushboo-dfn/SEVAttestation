@@ -8,7 +8,7 @@ Usage:
 
   Verify attestation and create secret to be injected
 
-  -p secret: secret to be injected (minimum of 8 bytes)
+  -p secret file: secret to be injected (minimum of 8 bytes)
   -m launch_measurement: launch measurement from QMP (result of query-sev-launch-measure)
   -t tiktek_file: file where sev-tool stored the TIK/TEK combination, defaults to tmp_tk.bin
   -o ovmf_file: location of OVMF file to calculate hash from, default is OVMF_CODE.fd
@@ -21,7 +21,7 @@ EOF
 }
 
 # default values
-OVMF=OVMF_CODE.fd
+OVMF=OVMF.fd # Be sure to use the patched build of OVMF
 TIKTEK="certs/tmp_tk.bin"
 SEVTOOL=sevtool
 API_MINOR=22
@@ -107,7 +107,7 @@ if [[ $expected_measurement != $launch_measurement ]]; then
 fi
 
 # Create packaged secret and its header
-echo "${SECRET}" > ./certs/secret.txt
+cp "${SECRET}" ./certs/secret.txt
 sudo ./sevtool --ofolder ./certs --package_secret
 
 if [ ! -f ./certs/packaged_secret.bin ]; then
@@ -115,7 +115,7 @@ if [ ! -f ./certs/packaged_secret.bin ]; then
   exit 1
 fi
 
-secret_base64=$(base64 ./certs/packaged_secret.bin)
-secret_header_base64=$(base64 ./certs/packaged_secret_header.bin)
+secret_base64=$(base64 -w 0 ./certs/packaged_secret.bin)
+secret_header_base64=$(base64 -w 0 ./certs/packaged_secret_header.bin)
 echo "Secret packaged successfully. Send the following message to the guest VM via qmp"
 echo "{ \"execute\": \"sev-inject-launch-secret\", \"arguments\": { \"packet-header\": \"${secret_header_base64}\", \"secret\": \"${secret_base64}\"}}"
